@@ -1,29 +1,40 @@
-(function() {
+(function () {
   // Configuration read from the script tag attributes
   const scriptTag = document.currentScript;
   if (!scriptTag) {
-    console.error('[CMS Embed] Could not locate script tag.');
+    console.error("[CMS Embed] Could not locate script tag.");
     return;
   }
 
   const cmsUrl = new URL(scriptTag.src).origin;
-  const authorId = scriptTag.getAttribute('data-author') || '';
-  const targetId = scriptTag.getAttribute('data-target') || 'cms-embed';
-  const mode = scriptTag.getAttribute('data-mode') || 'list'; // 'list' or 'single'
-  const slug = scriptTag.getAttribute('data-slug') || '';
+  const authorId = scriptTag.getAttribute("data-author") || "";
+  const targetId = scriptTag.getAttribute("data-target") || "cms-embed";
+  let mode = scriptTag.getAttribute("data-mode") || "list"; // 'list' or 'single'
+  let slug = scriptTag.getAttribute("data-slug") || "";
+
+  // Dynamic routing based on URL search parameters
+  const urlParams = new URLSearchParams(window.location.search);
+  const postParam = urlParams.get("post");
+  if (postParam) {
+    mode = "single";
+    slug = postParam;
+  }
 
   // Link format template, e.g., "/blog/:slug". Defaults to the CMS showcase if not provided.
-  const linkFormat = scriptTag.getAttribute('data-link-format') || `${cmsUrl}/showcase/:slug`;
+  const linkFormat =
+    scriptTag.getAttribute("data-link-format") || `${cmsUrl}/showcase/:slug`;
 
   async function init() {
     const container = document.getElementById(targetId);
     if (!container) {
-      console.error(`[CMS Embed] Target container #${targetId} not found. Please add <div id="${targetId}"></div> to your HTML.`);
+      console.error(
+        `[CMS Embed] Target container #${targetId} not found. Please add <div id="${targetId}"></div> to your HTML.`,
+      );
       return;
     }
 
     // Attach Shadow DOM to prevent host site CSS from breaking the embed
-    const shadow = container.attachShadow({ mode: 'open' });
+    const shadow = container.attachShadow({ mode: "open" });
     shadow.innerHTML = `
       <style>
         :host {
@@ -85,26 +96,26 @@
       </div>
     `;
 
-    const wrapper = shadow.getElementById('wrapper');
+    const wrapper = shadow.getElementById("wrapper");
 
     try {
-      if (mode === 'single' && slug) {
+      if (mode === "single" && slug) {
         await renderSingle(wrapper, slug);
       } else {
         await renderList(wrapper);
       }
     } catch (error) {
-      console.error('[CMS Embed] Error:', error);
+      console.error("[CMS Embed] Error:", error);
       wrapper.innerHTML = '<div class="error">Failed to load content.</div>';
     }
   }
 
   async function renderList(wrapper) {
-    const url = new URL('/api/posts', cmsUrl);
-    if (authorId) url.searchParams.set('authorId', authorId);
+    const url = new URL("/api/posts", cmsUrl);
+    if (authorId) url.searchParams.set("authorId", authorId);
 
     const response = await fetch(url);
-    if (!response.ok) throw new Error('Failed to fetch posts');
+    if (!response.ok) throw new Error("Failed to fetch posts");
 
     const posts = await response.json();
 
@@ -113,23 +124,25 @@
       return;
     }
 
-    const list = document.createElement('div');
-    list.className = 'post-list';
+    const list = document.createElement("div");
+    list.className = "post-list";
 
-    posts.forEach(post => {
-      const date = new Date(post.createdAt).toLocaleDateString('en-US', {
-        month: 'long', day: 'numeric', year: 'numeric'
+    posts.forEach((post) => {
+      const date = new Date(post.createdAt).toLocaleDateString("en-US", {
+        month: "long",
+        day: "numeric",
+        year: "numeric",
       });
 
-      const targetUrl = linkFormat.replace(':slug', post.slug);
+      const targetUrl = linkFormat.replace(":slug", post.slug);
 
-      const item = document.createElement('a');
-      item.className = 'post-item';
+      const item = document.createElement("a");
+      item.className = "post-item";
       item.href = targetUrl;
       // If linking back to the CMS showcase, open in new tab
       if (targetUrl.includes(cmsUrl)) {
-        item.target = '_blank';
-        item.rel = 'noopener noreferrer';
+        item.target = "_blank";
+        item.rel = "noopener noreferrer";
       }
 
       item.innerHTML = `
@@ -137,14 +150,14 @@
         <div class="post-meta">
           <span>${date}</span>
           <span>•</span>
-          <span>${post.author?.name || 'Author'}</span>
+          <span>${post.author?.name || "Author"}</span>
         </div>
       `;
 
       list.appendChild(item);
     });
 
-    wrapper.innerHTML = '';
+    wrapper.innerHTML = "";
     wrapper.appendChild(list);
   }
 
@@ -157,33 +170,35 @@
         wrapper.innerHTML = '<div class="empty">Post not found.</div>';
         return;
       }
-      throw new Error('Failed to fetch post');
+      throw new Error("Failed to fetch post");
     }
 
     const post = await response.json();
-    const date = new Date(post.createdAt).toLocaleDateString('en-US', {
-      month: 'long', day: 'numeric', year: 'numeric'
+    const date = new Date(post.createdAt).toLocaleDateString("en-US", {
+      month: "long",
+      day: "numeric",
+      year: "numeric",
     });
 
-    const article = document.createElement('article');
-    article.className = 'single-post';
+    const article = document.createElement("article");
+    article.className = "single-post";
 
     article.innerHTML = `
       <h1 class="single-title">${post.title}</h1>
       <div class="single-meta">
-        ${date} • By ${post.author?.name || 'Author'}
+        ${date} • By ${post.author?.name || "Author"}
       </div>
       <div class="single-content">
         ${post.content}
       </div>
     `;
 
-    wrapper.innerHTML = '';
+    wrapper.innerHTML = "";
     wrapper.appendChild(article);
   }
 
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', init);
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", init);
   } else {
     init();
   }

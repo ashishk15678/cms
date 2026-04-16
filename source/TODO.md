@@ -55,3 +55,7 @@
 ### 2026-04-15T17:19:16Z
 - Redesigned the Auth screen (`app/auth/page.tsx`) with a professional, elegant Google-like UI.
 - Improved error handling and loading states in the authentication flow.
+
+### 2026-04-15T18:44:13Z
+- Updated `embed.js` to support dynamic URL routing via query parameters (`?post=slug`).
+- Updated `embed-demo.html` to showcase seamless single-page post rendering using the `data-link-format` configuration.
